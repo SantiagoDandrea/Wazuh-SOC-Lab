@@ -42,7 +42,7 @@ Wazuh-SOC-Lab/
   - **VM 1 (Wazuh Server)**: Despliegue de Wazuh Manager, Indexer y Dashboard (v4.7.5).
   - **VM 2 (`atacante-server`)**: Servidor objetivo y endpoint monitoreado con **Wazuh Agent** (Linux), servicios SSH/Apache, módulos FIM, SCA y Fail2ban.
 - **Red**:
-  - Red local aislada tipo *Host-only* en VirtualBox.
+  - Red local aislada tipo _Host-only_ en VirtualBox.
 
 ---
 
