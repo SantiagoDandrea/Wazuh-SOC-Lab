@@ -49,7 +49,6 @@ Desde el **Wazuh Dashboard** en el navegador del host Windows:
 1. Acceso a la sección **Agents**.
 2. Validación de que ambos agentes (`atacante-server` en Ubuntu y el host Windows) se encuentren en estado **Active**.
 
-> [!NOTE]
 > La evidencia de ambos agentes activos y reportando simultáneamente en el Dashboard puede verse en [Evidencias de Monitoreo](../../evidencias/labs/monitoreo/Lab-agents.png).
 
 ---
