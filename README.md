@@ -37,9 +37,9 @@ Wazuh-SOC-Lab/
 - **SIEM / XDR**: Wazuh v4.7.5 (Manager, Indexer, Dashboard).
 - **Sistemas Operativos**:
   - Linux (Ubuntu Server - VM).
-  - Windows (Endpoint monitoreado).
+  - Windows (Host de las VMs y endpoint monitoreado).
 - **Herramientas de Detección y Contención**:
-  - Wazuh Agent (FIM `syscheck`, SCA policies, recolección de logs nativos).
+  - Wazuh Agent (FIM, SCA policies, recolección de logs nativos).
   - Fail2ban (bloqueo dinámico por firewall ante fuerza bruta).
   - OpenSSH Server, Apache Web Server.
 - **Virtualización y Red**:
