@@ -18,16 +18,12 @@ El objetivo del laboratorio es desarrollar y demostrar capacidades defensivas fu
 
 Para los escenarios analizados, se sigue un flujo de trabajo simplificado basado en fases estándar de respuesta a incidentes:
 
-```text
-[ Detección e Ingesta ]  -->  [ Análisis y Triage ]  -->  [ Evaluación de Impacto ]
-         |                              |                              |
-  Alertas SIEM / Logs             Inspección de logs             Verificación de cambios
-                                  y orígenes                     e integridad
-                                                                       |
-[ Cierre y Recomendaciones ] <-- [ Contención y Respuesta ] <----------+
-         |                                 |
-  Ticket formal y lecciones       Bloqueo de IP / Revocación
-  aprendidas                      de accesos
+```mermaid
+flowchart TD
+    A["1. Detección e Ingesta<br/><i>Alertas SIEM y Logs</i>"] --> B["2. Análisis y Triage<br/><i>Inspección de logs y orígenes</i>"]
+    B --> C["3. Evaluación de Impacto<br/><i>Verificación de cambios e integridad</i>"]
+    C --> D["4. Contención y Respuesta<br/><i>Bloqueo de IP / Revocación de accesos</i>"]
+    D --> E["5. Cierre y Recomendaciones<br/><i>Ticket formal y lecciones aprendidas</i>"]
 ```
 
 ### 1. Detección e Ingesta
