@@ -32,10 +32,10 @@ Implementar y validar el módulo **File Integrity Monitoring (FIM / syscheck)** 
 
 ## Eventos Detectados y Análisis
 
-| Evento | Descripción del Evento | Nivel / Relevancia |
-|---|---|---|
-| **File added to the system** | Detección de la adición de un nuevo archivo en el directorio auditado. | Identificación de posibles herramientas o archivos no autorizados añadidos al sistema. |
-| **Integrity checksum changed** | Detección de cambios en el hash / contenido de un archivo existente. | Alerta inmediata ante la manipulación de configuraciones críticas en `/etc`. |
+| Evento                         | Descripción del Evento                                                 | Nivel / Relevancia                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **File added to the system**   | Detección de la adición de un nuevo archivo en el directorio auditado. | Identificación de posibles herramientas o archivos no autorizados añadidos al sistema. |
+| **Integrity checksum changed** | Detección de cambios en el hash / contenido de un archivo existente.   | Alerta inmediata ante la manipulación de configuraciones críticas en `/etc`.           |
 
 ---
 
@@ -51,15 +51,16 @@ Implementar y validar el módulo **File Integrity Monitoring (FIM / syscheck)** 
 Las capturas obtenidas directamente desde el Dashboard de Wazuh para este laboratorio se encuentran en el directorio de evidencias:
 
 - **Alerta de archivo añadido al sistema (`File added to the system`)**:
-  
+
   ![File added to the system](../../evidencias/labs/fim/File-added-to-the-system-alert-opt.png)
 
 - **Alerta de cambio de integridad de checksum (`Integrity checksum changed`)**:
-  
+
   ![Integrity checksum changed](../../evidencias/labs/fim/Integrity-checksum-changed-alert-opt.png)
 
 ---
 
 ## Referencias
+
 - Laboratorio anterior: [Laboratorio 01 - Fuerza Bruta SSH](../01-fuerza-bruta-ssh/README.md).
 - Siguiente laboratorio: [Laboratorio 03 - Evaluación de Configuración de Seguridad (SCA)](../03-evaluacion-configuracion-seguridad/README.md).
