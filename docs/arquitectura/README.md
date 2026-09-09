@@ -1,58 +1,64 @@
 # Arquitectura del Entorno
 
-Este documento describe la arquitectura técnica del entorno utilizado a lo largo de los laboratorios y casos de análisis de seguridad en **Wazuh-SOC-Lab**.
+Este documento describe la arquitectura técnica y de red del laboratorio **Wazuh-SOC-Lab**.
 
 ---
 
 ## Esquema General
 
-El entorno está diseñado como un laboratorio de monitoreo de seguridad y respuesta ante incidentes basado en una arquitectura cliente-servidor centralizada.
+El despliegue está implementado sobre una máquina física **Windows**, la cual cumple un doble rol: actúa como host de virtualización (Oracle VirtualBox) y como endpoint monitoreado con el agente de Wazuh instalado. Dentro de VirtualBox se ejecutan dos máquinas virtuales con **Ubuntu Server**: una dedicada exclusivamente al servidor Wazuh y otra configurada como servidor/objetivo monitoreado (`atacante-server`).
 
 ```text
-               +----------------------------------------+
-               |              Wazuh Server              |
-               |                                        |
-               |  +----------------+ +---------------+  |
-               |  | Wazuh Manager  | | Wazuh Indexer |  |
-               |  +----------------+ +---------------+  |
-               |             +-----------------+        |
-               |             | Wazuh Dashboard |        |
-               |             +-----------------+        |
-               +-------------------+--------------------+
-                                   |
-                     Red Host-only (VirtualBox)
-                                   |
-         +-------------------------+-------------------------+
-         |                                                   |
-+-------------------+                               +-------------------+
-|   Agente Linux    |                               |  Agente Windows   |
-|  (Ubuntu Server)  |                               |   (Host Windows)  |
-|                   |                               |                   |
-| - Recolección log |                               | - Logs de eventos |
-| - Fail2ban        |                               |   de seguridad    |
-| - Módulo FIM      |                               | - Gestión de      |
-| - Módulo SCA      |                               |   cuentas         |
-+-------------------+                               +-------------------+
++-----------------------------------------------------------------------------------+
+|                            Host Físico: Windows                                   |
+|                                                                                   |
+|  - Agente Wazuh (Windows) [Monitoreo de eventos locales: logon, usuarios, grupos] |
+|  - Navegador Web [Acceso al Wazuh Dashboard: https://<IP_Wazuh_Server>:443]       |
+|                                                                                   |
+|  +-----------------------------------------------------------------------------+  |
+|  |                    Oracle VirtualBox (Red Host-only)                        |  |
+|  |                                                                             |  |
+|  |  +-----------------------------------+   +-------------------------------+  |  |
+|  |  |      VM 1: Ubuntu Server          |   |      VM 2: Ubuntu Server      |  |  |
+|  |  |         (Wazuh Server)            |   |     ('atacante-server')       |  |  |
+|  |  |                                   |   |                               |  |  |
+|  |  |  - Wazuh Manager (v4.7.5)         |   |  - Agente Wazuh (Linux)       |  |  |
+|  |  |  - Wazuh Indexer                  |   |  - Servicio SSH / Apache      |  |  |
+|  |  |  - Wazuh Dashboard                |   |  - Módulo FIM (/etc)          |  |  |
+|  |  |  - Ingesta de puertos 1514/1515   |   |  - Módulo SCA (Hardening)     |  |  |
+|  |  |                                   |   |  - Fail2ban (Respuesta local) |  |  |
+|  |  +-----------------------------------+   +-------------------------------+  |  |
+|  +-----------------------------------------------------------------------------+  |
++-----------------------------------------------------------------------------------+
 ```
 
 ---
 
 ## Componentes del Sistema
 
-### 1. Wazuh Server (Versión 4.7.5)
-Concentra las funciones de procesamiento, indexación y presentación de eventos de seguridad:
-- **Wazuh Manager**: Motor central encargado de recibir datos desde los agentes, procesar y normalizar logs, ejecutar reglas de decodificación y correlación, y disparar alertas.
-- **Wazuh Indexer**: Motor de búsqueda y almacenamiento distribuido que indexa los eventos y alertas procesados en tiempo real.
-- **Wazuh Dashboard**: Interfaz web analítica que permite consultar eventos, visualizar métricas de seguridad, auditar módulos (FIM, SCA) y revisar el estado operativo de los agentes.
+### 1. VM 1: Servidor Wazuh (Ubuntu Server - Wazuh v4.7.5)
+Máquina virtual dedicada al procesamiento, indexación y visualización centralizada de la telemetría de seguridad:
+- **Wazuh Manager**: Recibe los eventos enviados por los agentes en los puertos `1514/TCP` y `1515/TCP`, ejecuta la decodificación, correlación por reglas y dispara las alertas.
+- **Wazuh Indexer**: Motor de búsqueda y analítica distribuida que almacena e indexa los registros en tiempo real.
+- **Wazuh Dashboard**: Interfaz web analítica servida por la VM, accesible desde el navegador del host Windows para la gestión de agentes, auditorías FIM/SCA y análisis de eventos.
 
-### 2. Agentes de Monitoreo
-Endpoints configurados con el agente de Wazuh que recolectan eventos y envían datos hacia el servidor mediante canales cifrados:
-- **Agente Linux**: Máquina virtual con **Ubuntu Server**, utilizada para pruebas de servicios de red (SSH, Apache), monitoreo de integridad de archivos (`/etc`), auditorías de hardening y respuesta con herramientas del sistema (Fail2ban).
-- **Agente Windows**: Endpoint **Windows**, utilizado para monitoreo de eventos de autenticación, creación de cuentas locales y modificación de grupos privilegiados del sistema.
+### 2. VM 2: Agente Linux Monitoreado (`atacante-server` - Ubuntu Server)
+Máquina virtual utilizada como entorno de pruebas y servidor objetivo:
+- **Wazuh Agent**: Transmite logs de autenticación (`/var/log/auth.log`), logs del sistema (`syslog`) y telemetría de módulos hacia el servidor Wazuh.
+- **Servicios evaluados**: Servicio OpenSSH (`sshd`) y servidor web Apache.
+- **Módulos activos de Wazuh**:
+  - **FIM (`syscheck`)**: Monitoreo de integridad de archivos críticos en `/etc`.
+  - **SCA**: Evaluación continua de configuración de seguridad y cumplimiento de buenas prácticas.
+- **Defensa perimetral local**: Fail2ban configurado para correlacionar eventos de autenticación fallida y aplicar bloqueos automáticos en el firewall.
 
-### 3. Red y Virtualización
-- **Virtualización**: Oracle VirtualBox.
-- **Topología de red**: Red local aislada tipo **Host-only**, permitiendo la comunicación directa y controlada entre los agentes y el servidor Wazuh sin exponer servicios hacia redes no confiables.
+### 3. Host Windows: Host de Virtualización y Agente Wazuh
+- **Rol de Host**: Ejecuta Oracle VirtualBox y conecta los endpoints mediante un adaptador de red exclusivo tipo *Host-only*.
+- **Rol de Agente Wazuh**: Monitorea eventos nativos del sistema operativo mediante el canal de seguridad de Windows (Event IDs 4625 de inicios fallidos, 4720 de creación de cuentas y 4728/4732 de cambios en grupos de administradores).
+- **Consola de Operación SOC**: Visualización e investigación de alertas desde el navegador web de Windows conectado a la interfaz web del Wazuh Dashboard.
+
+### 4. Conectividad y Red
+- **Tipo de red**: Red local aislada tipo **Host-only** gestionada en VirtualBox.
+- Permite la comunicación segura y controlada entre el host Windows, la VM del Wazuh Server y la VM `atacante-server` sin exponer los servicios del laboratorio hacia redes externas no controladas.
 
 ---
 

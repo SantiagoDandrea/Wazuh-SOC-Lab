@@ -9,7 +9,7 @@ Repositorio centralizado que documenta la implementación, configuración, evalu
 ```text
 Wazuh-SOC-Lab/
 ├── docs/
-│   ├── arquitectura/                     # Arquitectura centralizada de Wazuh y endpoints
+│   ├── arquitectura/                     # Arquitectura de virtualización, Wazuh Server y agentes
 │   ├── configuracion/                    # Proceso de despliegue y enrolamiento de agentes
 │   └── metodologia/                      # Enfoque analítico SOC y ciclo de incidentes
 │
@@ -32,25 +32,24 @@ Wazuh-SOC-Lab/
 
 ---
 
-## Tecnologías y Plataformas Utilizadas
+## Entorno y Tecnologías Utilizadas
 
-- **SIEM / XDR**: Wazuh v4.7.5 (Manager, Indexer, Dashboard).
-- **Sistemas Operativos**:
-  - Linux (Ubuntu Server - VM).
-  - Windows (Endpoint monitoreado).
-- **Herramientas de Detección y Contención**:
-  - Wazuh Agent (FIM `syscheck`, SCA policies, recolección de logs nativos).
-  - Fail2ban (bloqueo dinámico por firewall ante fuerza bruta).
-  - OpenSSH Server, Apache Web Server.
-- **Virtualización y Red**:
-  - Oracle VirtualBox en configuración de red aislada (*Host-only*).
+- **Host Físico (Windows)**:
+  - Host de virtualización para Oracle VirtualBox.
+  - Endpoint monitoreado con **Wazuh Agent** (Windows).
+  - Consola de visualización de eventos y acceso al Wazuh Dashboard vía navegador web.
+- **Máquinas Virtuales (Ubuntu Server en VirtualBox)**:
+  - **VM 1 (Wazuh Server)**: Despliegue de Wazuh Manager, Indexer y Dashboard (v4.7.5).
+  - **VM 2 (`atacante-server`)**: Servidor objetivo y endpoint monitoreado con **Wazuh Agent** (Linux), servicios SSH/Apache, módulos FIM, SCA y Fail2ban.
+- **Red**:
+  - Red local aislada tipo *Host-only* en VirtualBox.
 
 ---
 
 ## Documentación General
 
-1. [Arquitectura del Entorno](docs/arquitectura/README.md): Detalle técnico del servidor Wazuh, agentes, roles y esquema de comunicación de red.
-2. [Configuración y Despliegue](docs/configuracion/README.md): Pasos de instalación del servidor, registro de agentes Linux y Windows, y verificación de conectividad.
+1. [Arquitectura del Entorno](docs/arquitectura/README.md): Esquema de virtualización en Windows, distribución de las VMs Ubuntu Server (servidor Wazuh y `atacante-server`), roles de agentes y red Host-only.
+2. [Configuración y Despliegue](docs/configuracion/README.md): Despliegue de la VM del servidor Wazuh, registro del agente en la VM Linux y del agente en el host Windows, y verificación de conectividad.
 3. [Metodología de Monitoreo y Análisis SOC](docs/metodologia/README.md): Criterios de triage, evaluación de impacto, ciclo de vida del ticket y enfoque defensivo.
 
 ---
@@ -60,16 +59,16 @@ Wazuh-SOC-Lab/
 Los laboratorios abarcan pruebas controladas y validación de capacidades defensivas del entorno:
 
 - **[Lab 01: Análisis de Fuerza Bruta SSH y Fail2ban](labs/01-fuerza-bruta-ssh/README.md)**  
-  Simulación de intentos fallidos por SSH, análisis directo de registros en `/var/log/auth.log`, respuesta automática perimetral en `/var/log/fail2ban.log` y documentación de limitaciones técnicas.
+  Simulación de intentos fallidos por SSH en la VM Linux, análisis directo de registros en `/var/log/auth.log`, respuesta automática perimetral en `/var/log/fail2ban.log` y documentación de limitaciones técnicas.
 
 - **[Lab 02: Monitoreo de Integridad de Archivos (FIM)](labs/02-monitoreo-integridad-archivos/README.md)**  
-  Supervisión en tiempo real de directorios críticos del sistema (`/etc`), detección de eventos de modificación (`Integrity checksum changed`) y creación (`File added to the system`), con verificación visual en el Dashboard.
+  Supervisión en tiempo real de directorios críticos del sistema (`/etc`) en el agente Linux, detección de eventos de modificación (`Integrity checksum changed`) y creación (`File added to the system`), con verificación visual en el Dashboard.
 
 - **[Lab 03: Evaluación de Configuración de Seguridad (SCA)](labs/03-evaluacion-configuracion-seguridad/README.md)**  
-  Auditoría de cumplimiento basada en benchmarks, detección de configuraciones deficientes y remediación técnica verificada (estados iniciales `FAILED` a finales `PASSED`) para el servicio NTP y el banner de acceso remoto (`/etc/issue.net`).
+  Auditoría de cumplimiento basada en benchmarks en el agente Linux, detección de configuraciones deficientes y remediación técnica verificada (estados iniciales `FAILED` a finales `PASSED`) para el servicio NTP y el banner de acceso remoto (`/etc/issue.net`).
 
 - **[Lab 04: Monitoreo de Eventos en Linux y Windows](labs/04-monitoreo-linux-windows/README.md)**  
-  Recolección y análisis de telemetría heterogénea: eventos de primer uso de sudo, modificación de contraseñas y creación de grupos en Linux; junto con inicios de sesión fallidos, creación de usuarios locales y alteración del grupo Administradores en Windows.
+  Recolección y análisis de telemetría heterogénea: eventos de primer uso de sudo, modificación de contraseñas y creación de grupos en la VM Linux; junto con inicios de sesión fallidos, creación de usuarios locales y alteración del grupo Administradores en el host Windows.
 
 ---
 
