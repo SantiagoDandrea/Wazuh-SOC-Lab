@@ -1,0 +1,11 @@
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Logs temporales locales
+*.log
+scratch/
