@@ -52,11 +52,11 @@ Las capturas obtenidas directamente desde el Dashboard de Wazuh para este labora
 
 - **Alerta de archivo añadido al sistema (`File added to the system`)**:
   
-  ![File added to the system](../../evidencias/labs/fim/File-added-to-the-system-alert.png)
+  ![File added to the system](../../evidencias/labs/fim/File-added-to-the-system-alert-opt.png)
 
 - **Alerta de cambio de integridad de checksum (`Integrity checksum changed`)**:
   
-  ![Integrity checksum changed](../../evidencias/labs/fim/Integrity-checksum-changed-alert.png)
+  ![Integrity checksum changed](../../evidencias/labs/fim/Integrity-checksum-changed-alert-opt.png)
 
 ---
 

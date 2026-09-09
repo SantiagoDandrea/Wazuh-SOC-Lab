@@ -58,33 +58,33 @@ Las alertas analizadas en el Dashboard de Wazuh para este laboratorio se encuent
 ### Estado de Agentes
 - **Agentes activos en el Dashboard (`Lab agents`)**:
   
-  ![Lab agents](../../evidencias/labs/monitoreo/Lab-agents.png)
+  ![Lab agents](../../evidencias/labs/monitoreo/Lab-agents-opt.png)
 
 ### Alertas en Linux
 - **Primer uso de sudo (`Linux first time sudo alert`)**:
   
-  ![Linux first time sudo alert](../../evidencias/labs/monitoreo/Linux-first-time-sudo-alert.png)
+  ![Linux first time sudo alert](../../evidencias/labs/monitoreo/Linux-first-time-sudo-alert-opt.png)
 
 - **Cambio de contraseña de usuario (`Linux change password alert`)**:
   
-  ![Linux change password alert](../../evidencias/labs/monitoreo/Linux-change-password-alert.png)
+  ![Linux change password alert](../../evidencias/labs/monitoreo/Linux-change-password-alert-opt.png)
 
 - **Nuevo grupo añadido al sistema (`Linux new group added alert`)**:
   
-  ![Linux new group added alert](../../evidencias/labs/monitoreo/Linux-new-group-added-alert.png)
+  ![Linux new group added alert](../../evidencias/labs/monitoreo/Linux-new-group-added-alert-opt.png)
 
 ### Alertas en Windows
 - **Intento de inicio de sesión fallido (`Win failed logon`)**:
   
-  ![Win failed logon](../../evidencias/labs/monitoreo/Win-failed-logon.png)
+  ![Win failed logon](../../evidencias/labs/monitoreo/Win-failed-logon-opt.png)
 
 - **Usuario creado (`Win user created`)**:
   
-  ![Win user created](../../evidencias/labs/monitoreo/Win-user-created.png)
+  ![Win user created](../../evidencias/labs/monitoreo/Win-user-created-opt.png)
 
 - **Modificación en grupo Administradores (`Win admin group changed`)**:
   
-  ![Win admin group changed](../../evidencias/labs/monitoreo/Win-admin-group-changed.png)
+  ![Win admin group changed](../../evidencias/labs/monitoreo/Win-admin-group-changed-opt.png)
 
 ---
 

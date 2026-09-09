@@ -50,19 +50,19 @@ Las capturas obtenidas en el Dashboard de Wazuh documentan los estados antes y d
 
 - **Escaneo inicial y falla en banner de login remoto (`Ensure remote login FAILED`)**:
   
-  ![SCA scan and Ensure remote login FAILED](../../evidencias/labs/sca/SCA-scan-and-Ensure-remote-login-FAILED.png)
+  ![SCA scan and Ensure remote login FAILED](../../evidencias/labs/sca/SCA-scan-and-Ensure-remote-login-FAILED-opt.png)
 
 - **Banner de login remoto remediado (`Ensure remote login PASSED`)**:
   
-  ![Ensure remote login PASSED](../../evidencias/labs/sca/Ensure-remote-login-PASSED.png)
+  ![Ensure remote login PASSED](../../evidencias/labs/sca/Ensure-remote-login-PASSED-opt.png)
 
 - **Falla en servicio de sincronización NTP (`Enable ntp FAILED`)**:
   
-  ![Enable ntp FAILED](../../evidencias/labs/sca/Enable-ntp-FAILED.png)
+  ![Enable ntp FAILED](../../evidencias/labs/sca/Enable-ntp-FAILED-opt.png)
 
 - **Servicio NTP remediado y activo (`Enable ntp PASSED`)**:
   
-  ![Enable ntp PASSED](../../evidencias/labs/sca/Enable-ntp-PASSED.png)
+  ![Enable ntp PASSED](../../evidencias/labs/sca/Enable-ntp-PASSED-opt.png)
 
 ---
 
