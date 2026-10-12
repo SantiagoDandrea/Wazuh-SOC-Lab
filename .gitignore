@@ -9,3 +9,6 @@ Thumbs.db
 # Logs temporales locales
 *.log
 scratch/
+
+# Notas y planeamiento local
+ROADMAP.md

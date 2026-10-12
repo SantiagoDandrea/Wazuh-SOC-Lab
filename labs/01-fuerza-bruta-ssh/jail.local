@@ -1,0 +1,18 @@
+# Configuración local de Fail2ban para protección del servicio SSH
+# Ubicación en el endpoint: /etc/fail2ban/jail.local
+# Endpoint: atacante-server (Ubuntu Server 22.04 LTS)
+
+[DEFAULT]
+bantime  = 10m
+findtime  = 10m
+maxretry = 3
+backend  = auto
+
+[sshd]
+enabled  = true
+port     = ssh
+logpath  = /var/log/auth.log
+maxretry = 3
+bantime  = 600
+findtime = 300
+banaction = iptables-multiport

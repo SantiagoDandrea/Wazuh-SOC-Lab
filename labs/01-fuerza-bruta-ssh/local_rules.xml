@@ -1,0 +1,30 @@
+<!-- /var/ossec/etc/rules/local_rules.xml - Reglas de laboratorio SOC -->
+
+<group name="custom_ssh,syslog,">
+
+  <!--
+    Regla 100001: Correlación de fuerza bruta SSH con umbral ajustado al lab
+    
+    Contexto operativo:
+    La regla integrada de Wazuh (Rule 5712) requiere 8 intentos fallidos en 120 segundos.
+    En este entorno, Fail2ban está configurado con maxretry = 3, bloqueando la IP en iptables
+    al tercer fallo. Por esa razón, los paquetes subsecuentes se descartan a nivel perimetral
+    y nunca llegan al servicio sshd ni se registran en /var/log/auth.log, provocando un punto
+    ciego en el SIEM con la regla nativa.
+
+    Ajuste técnico:
+    Esta regla ajusta la frecuencia a 3 intentos en 120 segundos asegurando <same_source_ip />
+    y evalúa tanto fallos con usuarios existentes (Rule 5716) como no existentes (Rule 5710).
+    De esta manera, el SIEM genera una alerta correlacionada (Nivel 10) en coincidencia con
+    el umbral de bloqueo de Fail2ban.
+  -->
+  <rule id="100001" level="10" frequency="3" timeframe="120">
+    <if_matched_sid>5716, 5710</if_matched_sid>
+    <same_source_ip />
+    <description>Fuerza bruta SSH detectada desde la misma IP (umbral lab ajustado a maxretry de Fail2ban)</description>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+  </rule>
+
+</group>
