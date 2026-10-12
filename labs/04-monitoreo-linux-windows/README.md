@@ -1,62 +1,82 @@
-# Laboratorio 04: Monitoreo de Eventos de Seguridad en Linux y Windows
+# Laboratorio 04: Monitoreo de Eventos en Entornos Heterogéneos (Linux y Windows)
 
 ## Objetivo
 
-Validar la recolección centralizada, decodificación y generación de alertas de seguridad en tiempo real en un entorno heterogéneo compuesto por endpoints Linux y Windows conectados a Wazuh Server.
+Comprobar la capacidad de ingesta, decodificación y correlación centralizada de eventos de seguridad en **Wazuh** sobre un entorno heterogéneo (Linux y Windows), analizando eventos críticos vinculados con autenticación, gestión de identidades y elevación de privilegios.
 
 ---
 
-## Entorno
+## Entorno del Laboratorio
 
-- **Wazuh Server**: Versión 4.7.5 (Manager, Indexer, Dashboard).
-- **Agente Linux**: Ubuntu Server.
-- **Agente Windows**: Host Windows monitoreando el visor de eventos de seguridad.
-- Para consultar la topología de red y el proceso de enrolamiento de agentes, ver [Arquitectura](../../docs/arquitectura/README.md) y [Configuración](../../docs/configuracion/README.md).
-
----
-
-## Procedimiento
-
-1. Verificación de agentes en estado **Active** desde el Dashboard de Wazuh.
-2. Generación intencional de eventos de seguridad relacionados con autenticación, gestión de cuentas y privilegios en ambos sistemas.
-3. Validación de las reglas de decodificación y visualización de alertas generadas en el Dashboard.
+- **Servidor Wazuh**: Ubuntu Server (Wazuh Manager, Indexer y Dashboard v4.7.5).
+- **Agente Linux**: Ubuntu Server 22.04 LTS (registrado como `atacante-server`).
+- **Agente Windows**: Endpoint Windows físico (registrado como `LAPTOP-6MIJ8MV4`), monitoreando eventos nativos del canal *Security*.
+- Para detalles sobre la conectividad, consultar [Arquitectura](../../docs/arquitectura/README.md).
 
 ---
 
-## Eventos y Alertas Analizadas
+## Comandos y Simulación de Eventos
 
-### 1. Sistema Linux
+Para generar telemetría real y validar la activación de reglas nativas, se realizaron las siguientes pruebas en cada sistema:
 
-| Alerta | Nivel | Descripción | Relevancia en Seguridad |
-|---|---|---|---|
-| **First time user executed sudo** | Medio / Alto | Detección de la primera invocación del comando `sudo` por parte de un usuario. | Indicador potencial de escalada de privilegios o cambio anómalo de comportamiento en una cuenta. |
-| **User changed password** | Medio | Modificación de la contraseña de un usuario local del sistema. | Registro de alteración de credenciales, relevante en investigaciones de persistencia. |
-| **New group added to the system** | Alto | Creación de un nuevo grupo en el sistema operativo. | Asignación potencial de nuevos niveles de acceso o modificación de la estructura de permisos. |
+### 1. Sistema Linux (Ubuntu Server)
 
-### 2. Sistema Windows
+```bash
+# Prueba 1: Creación de usuario y primer uso del comando sudo (MITRE T1548.003)
+# Al ejecutar 'useradd intruso_text', el sistema crea el usuario y su grupo correspondiente:
+sudo useradd -m -s /bin/bash intruso_text
 
-| Alerta | Nivel | Descripción | Relevancia en Seguridad |
-|---|---|---|---|
-| **Failed logon** (Event ID 4625) | Medio | Intento de inicio de sesión fallido con credenciales incorrectas. | Detección de intentos de adivinación de contraseñas o fallos reiterados de autenticación. |
-| **User created** (Event ID 4720) | Medio | Creación de una nueva cuenta de usuario local. | Actividad crítica para detectar persistencia no autorizada mediante cuentas locales secundarias. |
-| **Administrator group changed** (Event ID 4728/4732) | Medio / Alto | Modificación de la membresía del grupo de Administradores local. | Indicador directo de escalada de privilegios y otorgamiento de acceso irrestricto en el host. |
+# Prueba 2: Modificación de contraseña de cuenta local (MITRE T1098)
+sudo passwd intruso_text
+
+# Prueba 3: Primera invocación de privilegios administrativos
+# Genera la alerta de primer uso de comando privilegiado:
+sudo su
+```
+
+### 2. Sistema Windows (PowerShell / Consola Administrativa)
+
+```powershell
+# Prueba 1: Generar intento fallido de autenticación interactiva - Event ID 4625 (MITRE T1110)
+# Intentos con credenciales incorrectas en la pantalla de bloqueo o consola
+
+# Prueba 2: Creación de cuenta de usuario local - Event ID 4720 (MITRE T1136.001)
+net user intruso_win ClaveSegura2024! /add
+
+# Prueba 3: Incorporación de usuario al grupo Administradores - Event ID 4728/4732 (MITRE T1098)
+net localgroup Administradores intruso_win /add
+```
 
 ---
 
-## Resultados
+## Alertas y Reglas Validadas en el Dashboard
 
-- Ambos agentes enviaron registros continuos a través del canal cifrado hacia el Wazuh Manager.
-- El motor de reglas correlacionó y clasificó exitosamente los eventos según su nivel de severidad.
-- El equipo defensivo cuenta con visibilidad unificada de eventos críticos en ambos sistemas operativos desde una única consola.
+A continuación se detallan las alertas verificadas en la consola de Wazuh, coincidentes con las capturas de pantalla obtenidas durante la auditoría:
+
+### 1. Eventos en Linux (Ubuntu Server)
+
+| Alerta en Dashboard | Regla Wazuh | Nivel | Detalles Observados en Log | Relevancia en Seguridad |
+|---|---|---|---|---|
+| **First time user executed sudo** | `Rule 5403` | Nivel 4 | Invocación de `/usr/bin/su` por el usuario `atacante`. | Indicador de primer uso de privilegios administrativos o posible escalada. |
+| **PAM: User changed password** | `Rule 5555` | Nivel 3 | Cambio de token de autenticación para la cuenta `intruso_text`. | Registro de alteración de credenciales en `/etc/shadow`. |
+| **New group added to the system** | `Rule 5901` | Nivel 8 | Alta del grupo `intruso_text` (GID 1001) mediante `useradd`. | Modificación en la estructura de grupos locales y accesos del sistema. |
+
+### 2. Eventos en Windows (Host)
+
+| Alerta en Dashboard | Event ID | Regla Wazuh | Nivel | Detalles Observados en Log | Relevancia en Seguridad |
+|---|---|---|---|---|---|
+| **Logon failure - Unknown user or bad password** | `4625` | `Rule 60122` | Nivel 5 | Intento interactivo fallido (`LogonType: 2`, `User32`) desde `127.0.0.1`. | Detección de fallos reiterados o intentos de adivinación de contraseñas. |
+| **User account enabled or created** | `4720` | `Rule 60109` | Nivel 8 | Creación de la cuenta local `intruso_win` por el usuario `santiagodandre`. | Técnica clásica para establecer persistencia secundaria en el host. |
+| **Administrators group changed** | `4728 / 4732` | `Rule 60154` | Nivel 12 | Inclusión del miembro `intruso_win` en el grupo local `Administradores`. | Elevación de privilegios a nivel administrativo total sobre el equipo. |
 
 ---
 
-## Evidencias
+## Evidencias Verificadas en el Dashboard
 
-Las alertas analizadas en el Dashboard de Wazuh para este laboratorio se encuentran organizadas en evidencias:
+Capturas de pantalla obtenidas en el Wazuh Dashboard que respaldan cada evento:
 
 ### Estado de Agentes
-- **Agentes activos en el Dashboard (`Lab agents`)**:
+- **Ambos agentes activos y reportando simultáneamente (`Lab agents`)**:
   
   ![Lab agents](../../evidencias/labs/monitoreo/Lab-agents-opt.png)
 
@@ -65,29 +85,30 @@ Las alertas analizadas en el Dashboard de Wazuh para este laboratorio se encuent
   
   ![Linux first time sudo alert](../../evidencias/labs/monitoreo/Linux-first-time-sudo-alert-opt.png)
 
-- **Cambio de contraseña de usuario (`Linux change password alert`)**:
+- **Cambio de contraseña (`Linux change password alert`)**:
   
   ![Linux change password alert](../../evidencias/labs/monitoreo/Linux-change-password-alert-opt.png)
 
-- **Nuevo grupo añadido al sistema (`Linux new group added alert`)**:
+- **Nuevo grupo añadido (`Linux new group added alert`)**:
   
   ![Linux new group added alert](../../evidencias/labs/monitoreo/Linux-new-group-added-alert-opt.png)
 
 ### Alertas en Windows
-- **Intento de inicio de sesión fallido (`Win failed logon`)**:
+- **Inicio de sesión fallido (`Win failed logon`)**:
   
   ![Win failed logon](../../evidencias/labs/monitoreo/Win-failed-logon-opt.png)
 
-- **Usuario creado (`Win user created`)**:
+- **Creación de usuario local (`Win user created`)**:
   
   ![Win user created](../../evidencias/labs/monitoreo/Win-user-created-opt.png)
 
-- **Modificación en grupo Administradores (`Win admin group changed`)**:
+- **Modificación del grupo Administradores (`Win admin group changed`)**:
   
   ![Win admin group changed](../../evidencias/labs/monitoreo/Win-admin-group-changed-opt.png)
 
 ---
 
-## Referencias
+## Documentos Relacionados
+
 - Laboratorio anterior: [Laboratorio 03 - Evaluación de Configuración de Seguridad (SCA)](../03-evaluacion-configuracion-seguridad/README.md).
-- Casos de análisis SOC vinculados: [Casos de Seguridad](../../casos/caso-01-actividad-sospechosa/README.md).
+- Casos prácticos de investigación: [Casos de Seguridad](../../casos/caso-01-actividad-sospechosa/README.md).

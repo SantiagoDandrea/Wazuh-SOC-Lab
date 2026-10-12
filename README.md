@@ -1,6 +1,13 @@
-# Wazuh-SOC-Lab: Monitoreo Defensivo y Análisis de Seguridad
+# Wazuh-SOC-Lab: Monitoreo Defensivo, Detección y Análisis de Incidentes
 
-Repositorio centralizado que documenta la implementación, configuración, evaluación y análisis de eventos de seguridad utilizando la plataforma SIEM **Wazuh** en un entorno heterogéneo (Linux y Windows), junto con el análisis e investigación de incidentes desde una perspectiva **Blue Team / SOC Tier 1**.
+[![SIEM](https://img.shields.io/badge/SIEM-Wazuh%204.7.5-blue.svg)](https://wazuh.com/)
+[![OS](https://img.shields.io/badge/Endpoints-Ubuntu%20%7C%20Windows-brightgreen.svg)]()
+[![Defense](https://img.shields.io/badge/Defense-Fail2ban%20%7C%20FIM%20%7C%20SCA-orange.svg)]()
+[![Role](https://img.shields.io/badge/Focus-SOC%20Tier%201%20%2F%20Blue%20Team-navy.svg)]()
+
+Repositorio que documenta la implementación práctica, configuración, auditoría y análisis de telemetría de seguridad utilizando la plataforma SIEM **Wazuh** en un entorno heterogéneo (**Linux y Windows**), junto con el análisis e investigación de incidentes simulados desde la perspectiva de un analista **Blue Team / SOC Tier 1**.
+
+El objetivo de este proyecto fue salir del plano puramente teórico para experimentar directamente cómo se reciben e interpretan los registros del sistema operativo, por qué en ocasiones las herramientas de prevención local (Fail2ban) pueden generar brechas de visibilidad en el SIEM, cómo resolver problemas reales de estabilidad y consumo de recursos, y cómo estructurar formalmente la investigación y contención de incidentes de seguridad.
 
 ---
 
@@ -9,21 +16,25 @@ Repositorio centralizado que documenta la implementación, configuración, evalu
 ```text
 Wazuh-SOC-Lab/
 ├── docs/
-│   ├── arquitectura/                     # Arquitectura de virtualización, Wazuh Server y agentes
-│   ├── configuracion/                    # Proceso de despliegue y enrolamiento de agentes
-│   └── metodologia/                      # Enfoque analítico SOC y ciclo de incidentes
+│   ├── arquitectura/                     # Topología de red en VirtualBox, recursos y roles
+│   ├── configuracion/                    # Despliegue All-in-One y resolución de problemas reales
+│   └── metodologia/                      # Criterios de triage, matriz de severidad y flujo de trabajo
 │
 ├── labs/
-│   ├── 01-fuerza-bruta-ssh/              # Análisis de fuerza bruta SSH y respuesta con Fail2ban
-│   ├── 02-monitoreo-integridad-archivos/ # File Integrity Monitoring (FIM) con Wazuh
-│   ├── 03-evaluacion-configuracion-seguridad/ # Hardening y remediación con Wazuh SCA
-│   └── 04-monitoreo-linux-windows/       # Monitoreo de eventos en sistemas Linux y Windows
+│   ├── 01-fuerza-bruta-ssh/              # Fuerza bruta SSH, Fail2ban y análisis del visibility gap
+│   │   ├── local_rules.xml               # Regla custom adaptada para correlación por IP
+│   │   └── jail.local                    # Configuración de Fail2ban para protección de SSH
+│   ├── 02-monitoreo-integridad-archivos/ # Monitoreo de integridad de archivos en /etc (FIM)
+│   │   └── ossec-fim-snippet.conf        # Snippet seguro con realtime inotify y directiva nodiff
+│   ├── 03-evaluacion-configuracion-seguridad/ # Hardening con SCA (CIS Benchmarks)
+│   │   └── issue.net                     # Banner remediado que cumple con la política CIS
+│   └── 04-monitoreo-linux-windows/       # Telemetría heterogénea (sudo, claves, grupos, eventos de Windows)
 │
 ├── casos/
-│   ├── caso-01-actividad-sospechosa/     # Ticket SOC: Escaneo web, intentos SSH y contención
-│   └── caso-02-incidente-seguridad/      # Ticket SOC: Acceso no autorizado, sudo y respuesta
+│   ├── caso-01-actividad-sospechosa/     # Ticket SOC 01: Reconocimiento web y fuerza bruta mitigada
+│   └── caso-02-incidente-seguridad/      # Ticket SOC 02: Acceso no autorizado, sudo y contención manual
 │
-└── evidencias/                           # Capturas y evidencias recolectadas en el entorno
+└── evidencias/                           # Capturas del Dashboard que respaldan las alertas
     └── labs/
         ├── fim/
         ├── sca/
@@ -32,58 +43,54 @@ Wazuh-SOC-Lab/
 
 ---
 
-## Entorno y Tecnologías Utilizadas
+## Arquitectura del Entorno
 
-- **Host Físico (Windows)**:
-  - Host de virtualización para Oracle VirtualBox.
-  - Endpoint monitoreado con **Wazuh Agent** (Windows).
-  - Consola de visualización de eventos y acceso al Wazuh Dashboard vía navegador web.
-- **Máquinas Virtuales (Ubuntu Server en VirtualBox)**:
-  - **VM 1 (Wazuh Server)**: Despliegue de Wazuh Manager, Indexer y Dashboard (v4.7.5).
-  - **VM 2 (`atacante-server`)**: Servidor objetivo y endpoint monitoreado con **Wazuh Agent** (Linux), servicios SSH/Apache, módulos FIM, SCA y Fail2ban.
-- **Red**:
-  - Red local aislada tipo _Host-only_ en VirtualBox.
+- **Host Físico (Windows - `192.168.56.1` | Hostname: `LAPTOP-6MIJ8MV4`)**:
+  - Hipervisor (Oracle VirtualBox) y consola de analista (acceso web al Wazuh Dashboard).
+  - Endpoint monitoreado con agente Wazuh para Windows (canales de eventos de seguridad).
+  - Origen de las simulaciones de ataque hacia las VMs a través de la red Host-only.
+- **Máquinas Virtuales (Ubuntu Server en red Host-only `192.168.56.0/24`)**:
+  - **VM 1: Servidor Wazuh (`192.168.56.101` / `.103`)**: Despliegue All-in-One de Wazuh Manager, Indexer y Dashboard (v4.7.5).
+  - **VM 2: Servidor objetivo (`atacante-server` - `192.168.56.102` / `.104`)**:
+    - Servidor Linux monitoreado con Apache, OpenSSH, Fail2ban y agente de Wazuh.
+    > *Nota sobre el hostname y direccionamiento:* Durante el aprovisionamiento de la máquina virtual se le asignó el nombre `atacante-server` y con ese identificador quedó registrada en el Dashboard. Opera estrictamente como el servidor objetivo/víctima del laboratorio. Para más detalles sobre las IPs en las evidencias, consultar [Arquitectura](docs/arquitectura/README.md).
 
 ---
 
-## Documentación General
+## Documentación Técnica
 
-1. [Arquitectura del Entorno](docs/arquitectura/README.md): Esquema de virtualización en Windows, distribución de las VMs Ubuntu Server (servidor Wazuh y `atacante-server`), roles de agentes y red Host-only.
-2. [Configuración y Despliegue](docs/configuracion/README.md): Despliegue de la VM del servidor Wazuh, registro del agente en la VM Linux y del agente en el host Windows, y verificación de conectividad.
-3. [Metodología de Monitoreo y Análisis SOC](docs/metodologia/README.md): Criterios de triage, evaluación de impacto, ciclo de vida del ticket y enfoque defensivo.
+- [Arquitectura del Entorno](docs/arquitectura/README.md): Topología de red Host-only, roles de los equipos, recursos de memoria asignados y aclaraciones sobre hostnames e IPs en las capturas.
+- [Configuración y Troubleshooting](docs/configuracion/README.md): Instalación del servidor, conexión de agentes y problemas resueltos durante el despliegue (OOM Killer en el Indexer, latencia en FIM y firewall de Windows).
+- [Metodología SOC Tier 1](docs/metodologia/README.md): Criterios de triage analítico, matriz de severidad técnica y procedimiento formal de escalamiento e informes.
 
 ---
 
 ## Laboratorios Prácticos (Labs)
 
-Los laboratorios abarcan pruebas controladas y validación de capacidades defensivas del entorno:
+- **[Lab 01: Fuerza Bruta SSH, Fail2ban y Análisis de Detección](labs/01-fuerza-bruta-ssh/README.md)**  
+  Simulación de ataques contra SSH, contención perimetral con Fail2ban y análisis del *gap* de detección en el SIEM: por qué la regla nativa no alertaba ante el corte temprano de Fail2ban y diseño de la regla custom `100001` en `local_rules.xml` para correlacionar antes del bloqueo.
 
-- **[Lab 01: Análisis de Fuerza Bruta SSH y Fail2ban](labs/01-fuerza-bruta-ssh/README.md)**  
-  Simulación de intentos fallidos por SSH en la VM Linux, análisis directo de registros en `/var/log/auth.log`, respuesta automática perimetral en `/var/log/fail2ban.log` y documentación de limitaciones técnicas.
+- **[Lab 02: Monitoreo de Integridad de Archivos (FIM / syscheck)](labs/02-monitoreo-integridad-archivos/README.md)**  
+  Supervisión de cambios en `/etc` en modo programado y en tiempo real con `inotify`, detección de creación (`fim_test2.conf`) y modificación (`/etc/hosts`), junto con la aplicación de la directiva `<nodiff>/etc/shadow` para proteger hashes de contraseñas.
 
-- **[Lab 02: Monitoreo de Integridad de Archivos (FIM)](labs/02-monitoreo-integridad-archivos/README.md)**  
-  Supervisión en tiempo real de directorios críticos del sistema (`/etc`) en el agente Linux, detección de eventos de modificación (`Integrity checksum changed`) y creación (`File added to the system`), con verificación visual en el Dashboard.
-
-- **[Lab 03: Evaluación de Configuración de Seguridad (SCA)](labs/03-evaluacion-configuracion-seguridad/README.md)**  
-  Auditoría de cumplimiento basada en benchmarks en el agente Linux, detección de configuraciones deficientes y remediación técnica verificada (estados iniciales `FAILED` a finales `PASSED`) para el servicio NTP y el banner de acceso remoto (`/etc/issue.net`).
+- **[Lab 03: Auditoría de Seguridad (SCA) y Hardening](labs/03-evaluacion-configuracion-seguridad/README.md)**  
+  Auditoría de cumplimiento con CIS Benchmarks en Linux, remediación técnica de controles en estado `FAILED` (sincronización horaria con NTP y banner de advertencia en `/etc/issue.net`) y verificación del cambio a `PASSED`.
 
 - **[Lab 04: Monitoreo de Eventos en Linux y Windows](labs/04-monitoreo-linux-windows/README.md)**  
-  Recolección y análisis de telemetría heterogénea: eventos de primer uso de sudo, modificación de contraseñas y creación de grupos en la VM Linux; junto con inicios de sesión fallidos, creación de usuarios locales y alteración del grupo Administradores en el host Windows.
+  Correlación de eventos críticos en ambos sistemas: primer uso de `sudo` (`Rule 5403`), modificación de contraseñas (`Rule 5555`) y creación de grupos (`Rule 5901`) en Linux; junto con inicios de sesión fallidos (Event ID 4625), creación de cuentas (Event ID 4720) y cambios en el grupo Administradores (Event ID 4728/4732) en Windows.
 
 ---
 
-## Casos de Seguridad (Blue Team / SOC Cases)
+## Casos de Investigación (Tickets SOC)
 
-Escenarios de investigación estructurados bajo el formato de tickets de seguridad:
+- **[Caso 01: Reconocimiento Web y Fuerza Bruta SSH Contenida](casos/caso-01-actividad-sospechosa/README.md)**  
+  *Severidad: Baja*. Triage de escaneo de rutas administrativas en Apache (`access.log`) seguido de intentos SSH contra `root` en `auth.log`, contenidos automáticamente por Fail2ban sin impacto operativo.
 
-- **[Caso 01: Actividad Sospechosa Contenida (Ticket SOC-2026-001)](casos/caso-01-actividad-sospechosa/README.md)**  
-  Detección de escaneo web automatizado en Apache (`access.log`) seguido de intentos de fuerza bruta SSH contra `root` en `auth.log`. Análisis de correlación, contención automática con Fail2ban y cierre sin impacto.
-
-- **[Caso 02: Incidente de Seguridad con Impacto y Contención (Ticket SOC-2026-002)](casos/caso-02-incidente-seguridad/README.md)**  
-  Investigación de inicio de sesión SSH exitoso con credenciales legítimas desde una IP no habitual, seguido de elevación de privilegios mediante `sudo`. Evaluación de impacto, acciones manuales de contención, revocación de accesos y recomendaciones defensivas.
+- **[Caso 02: Acceso No Autorizado y Elevación de Privilegios](casos/caso-02-incidente-seguridad/README.md)**  
+  *Severidad: Alta*. Investigación de inicio de sesión SSH con credenciales legítimas desde una IP no habitual, ejecución de `sudo cat /etc/shadow`, línea de tiempo del evento, contención manual inmediata (`pkill`, `passwd -l`) y reporte técnico de remediación para Sysadmin.
 
 ---
 
-## Evidencias
+## Evidencias Verificadas
 
-Todas las capturas de pantalla que respaldan las alertas, estados y verificaciones se encuentran preservadas y enlazadas dentro de cada laboratorio respectivo bajo el directorio [evidencias/](evidencias/).
+Todas las capturas de pantalla obtenidas en el Wazuh Dashboard que respaldan las alertas, estados de agentes y evaluaciones de cumplimiento se encuentran catalogadas en el directorio [evidencias/](evidencias/).

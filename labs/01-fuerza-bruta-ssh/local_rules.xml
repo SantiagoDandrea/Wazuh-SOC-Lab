@@ -1,0 +1,13 @@
+<!-- /var/ossec/etc/rules/local_rules.xml - Reglas de laboratorio SOC -->
+
+<group name="custom_ssh,syslog,">
+  <rule id="100001" level="10" frequency="3" timeframe="120">
+    <if_matched_sid>5716, 5710</if_matched_sid>
+    <same_source_ip />
+    <description>Fuerza bruta SSH detectada desde la misma IP (umbral lab ajustado a maxretry de Fail2ban)</description>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+  </rule>
+
+</group>
